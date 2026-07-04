@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google AI Pro - Unified Usage Dashboard</title>
+<style>
+  :root{
+    --blue:#4285F4; --red:#EA4335; --yellow:#FBBC04; --green:#34A853; --cyan:#22B8CF; --indigo:#5E5CE6;
+    --bg:#f6f8fc; --card:#ffffff; --line:#e3e8ef; --head:#5f6b7a;
+    --ink:#1f2937; --mute:#6b7280; --faint:#9aa4b2; --warn:#f0a832;
+    --sans:system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"Cascadia Code",Consolas,ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);padding:22px 16px}
+  .wrap{max-width:1150px;margin:0 auto}
+
+  header{text-align:center;padding:6px 0 14px}
+  h1{font-size:23px;letter-spacing:.3px;margin:0}
+  h1 .g{color:var(--blue)} h1 .o{color:var(--red)} h1 .g2{color:var(--yellow)} h1 .l{color:var(--green)}
+  .sub{color:var(--mute);font-size:12.5px;margin:6px auto 0;max-width:78ch}
+  .toolbar{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+  h2.sec{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--head);
+    margin:26px 4px 12px;font-weight:700;display:flex;align-items:center;gap:10px}
+  h2.sec::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  button,.btn{font:inherit;font-size:13px;cursor:pointer;border-radius:8px;border:1px solid var(--line);
+    background:#fff;color:var(--ink);padding:8px 14px;transition:border-color .12s,background .12s,filter .12s;text-decoration:none;display:inline-block}
+  button:hover,.btn:hover{border-color:var(--blue);background:#f0f5ff}
+  .primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .primary:hover{background:#3367d6;border-color:#3367d6}
+  :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+  /* ---- metered table ---- */
+  .table{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(16,24,40,.04)}
+  .colhead,.row{display:grid;grid-template-columns:1.05fr 1.15fr 1.55fr 1.2fr 1.1fr}
+  .colhead{background:var(--head);color:#fff}
+  .colhead div{padding:11px 14px;font-size:10.5px;letter-spacing:1.1px;text-transform:uppercase;font-weight:600;border-right:1px solid rgba(255,255,255,.14)}
+  .colhead div:last-child{border-right:none}
+  .row{border-top:1px solid var(--line)}
+  .cell{padding:16px 15px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:8px;min-width:0}
+  .cell:last-child{border-right:none}
+
+  .svc{display:flex;align-items:center;justify-content:center;gap:8px}
+  .svc svg{width:26px;height:26px;flex:none}
+  .svc-name{font-weight:700;font-size:13.5px;text-align:center}
+  .svc-note{font-size:10px;color:var(--faint);text-align:center;font-family:var(--mono);line-height:1.3}
+  .gauge{margin:0 auto} .gauge-lbl{text-align:center;font-size:10.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.5px}
+
+  .benefits{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .benefits li{position:relative;padding-left:21px;font-size:12px;line-height:1.35;color:#374151}
+  .benefits li::before{content:"";position:absolute;left:0;top:3px;width:13px;height:13px;border-radius:50%;background:var(--ac);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 6L9 17l-5-5' fill='none' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E") center/10px no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 6L9 17l-5-5' fill='none' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E") center/10px no-repeat}
+
+  .metric{display:flex;flex-direction:column;gap:8px;justify-content:center;height:100%}
+  .metric .edit{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap}
+  .metric input[type=number]{width:70px;font-family:var(--mono);font-size:18px;font-weight:700;color:var(--ink);
+    border:none;border-bottom:1.5px dashed var(--faint);background:transparent;padding:0 2px 1px;text-align:right}
+  .metric input[type=number]:focus{border-bottom-color:var(--blue);outline:none}
+  .metric .slash{font-family:var(--mono);font-size:16px;color:var(--faint)}
+  .metric .unit{font-size:10.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.5px}
+  .prog{height:7px;border-radius:20px;background:#eef1f6;overflow:hidden}
+  .prog>i{display:block;height:100%;border-radius:20px;background:var(--ac);transition:width .3s}
+  .metric .hint{font-size:10px;color:var(--faint)}
+  .mtag{align-self:flex-start;font-family:var(--mono);font-size:8.5px;letter-spacing:.7px;text-transform:uppercase;padding:2px 7px;border-radius:20px;background:#fff6e5;color:var(--warn)}
+  .mtag.live{background:#e6f7fb;color:var(--cyan)}
+
+  .actions{display:flex;flex-direction:column;gap:8px;justify-content:center;height:100%}
+  .actions .btn{background:var(--ac);border-color:var(--ac);color:#fff;font-size:12px;text-align:center;padding:8px 10px}
+  .actions .btn.ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+  .actions .btn:hover{filter:brightness(.94)} .actions .btn.ghost:hover{filter:none;border-color:var(--ac)}
+
+  .api-in{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .api-in input{flex:1;min-width:110px;font-family:var(--mono);font-size:12px;padding:7px 9px;border:1px solid var(--line);border-radius:6px}
+  .api-out{font-family:var(--mono);font-size:11px;white-space:pre-wrap;color:var(--mute);min-height:14px}
+  .api-out .ok{color:var(--green)} .api-out .bad{color:var(--red)} .api-out .hl{color:var(--cyan)}
+  .chk{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mute);cursor:pointer}
+
+  /* ---- included perks grid ---- */
+  .perks{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .pcard{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--pc);border-radius:12px;padding:15px 16px}
+  .pcard h3{margin:0 0 11px;font-size:13px;display:flex;align-items:center;gap:8px}
+  .pcard h3 .dot{width:9px;height:9px;border-radius:50%;background:var(--pc)}
+  .pitems{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .pitems li{font-size:12.5px;line-height:1.4;color:#374151}
+  .pitems b{color:var(--ink)}
+  .pitems .d{color:var(--mute)}
+  .tag{font-family:var(--mono);font-size:9px;letter-spacing:.5px;text-transform:uppercase;padding:1px 6px;border-radius:20px;margin-left:5px;vertical-align:middle}
+  .tag.us{background:#fdeceb;color:var(--red)} .tag.free{background:#e7f5ec;color:var(--green)}
+  .tag.payg{background:#fff6e5;color:var(--warn)} .tag.dev{background:#ecebfb;color:var(--indigo)}
+  .pitems a{font-size:11px;color:var(--blue)}
+
+  footer{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:22px}
+  .chip{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:12px;color:#374151;text-decoration:none}
+  .chip.warn{border-color:var(--warn);background:#fffaf0}
+  .chip svg{width:18px;height:18px;flex:none}
+  .foot-note{text-align:center;color:var(--faint);font-size:11px;margin-top:14px;max-width:80ch;margin-inline:auto}
+
+  @media (max-width:880px){
+    .colhead{display:none}
+    .row{grid-template-columns:1fr}
+    .cell{border-right:none;border-top:1px dashed var(--line)}
+    .cell:first-child{border-top:none}
+    .cell::before{content:attr(data-h);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);font-weight:600}
+    .cell:first-child::before{display:none}
+  }
+  /* ---- non-metered: category rail board ---- */
+  .perkboard{display:flex;flex-direction:column;gap:11px}
+  .band{display:grid;grid-template-columns:200px 1fr;background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden}
+  .band-h{background:var(--bc);color:#fff;padding:15px 16px;display:flex;flex-direction:column;justify-content:center;gap:5px;position:relative}
+  .band-h .bnum{font-family:var(--mono);font-size:11px;letter-spacing:1px;opacity:.85}
+  .band-h .bt{font-size:17px;font-weight:700;line-height:1.2}
+  .band-h .bc{font-size:12px;opacity:.9;font-family:var(--mono);letter-spacing:.3px}
+  .band-items{display:flex;flex-direction:column;gap:8px;padding:12px}
+  .pcell{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-left:3px solid var(--bc);border-radius:9px;padding:11px 14px;background:#fff;transition:box-shadow .13s}
+  .pcell:hover{box-shadow:0 3px 10px rgba(16,24,40,.08)}
+  .pcell .pc-main{flex:1;min-width:0}
+  .pcell .n{font-size:12.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .pcell .d{font-size:11.5px;color:var(--mute);line-height:1.4;margin-top:2px}
+  .pcell a{font-size:11px;color:var(--bc);font-weight:700;text-decoration:none;white-space:nowrap;margin-left:auto}
+  .pcell a:hover{text-decoration:underline}
+  @media (max-width:560px){.pcell{flex-direction:column;align-items:flex-start;gap:5px}.pcell a{margin-left:0}}
+  @media (max-width:640px){.band{grid-template-columns:1fr}.band-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}.band-h .bt{font-size:13px}}
+
+  /* ---- disclaimer ---- */
+  .disclaimer{display:flex;gap:11px;align-items:flex-start;background:#fff8ec;border:1px solid #f5d99a;border-left:3px solid var(--warn);border-radius:10px;padding:12px 14px;margin:12px 4px 0}
+  .disclaimer svg{width:19px;height:19px;flex:none;margin-top:1px}
+  .disclaimer .dtext{font-size:12px;color:#6b5a2e;line-height:1.5}
+  .disclaimer b{color:#4a3f1f}
+  .disclaimer code{font-family:var(--mono);font-size:11px;background:#fbeecb;padding:1px 5px;border-radius:4px}
+
+  /* ---- profile ---- */
+  .profile{display:flex;gap:18px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-top:20px}
+  .pf-ava img,.pf-ava .mono{width:84px;height:84px;border-radius:50%;object-fit:cover;flex:none;display:block}
+  .pf-ava .mono{background:linear-gradient(135deg,#4285F4,#34A853);color:#fff;font-size:34px;font-weight:700;align-items:center;justify-content:center}
+  .pf-body{flex:1;min-width:0}
+  .pf-body h3{margin:0 0 3px;font-size:16px}
+  .pf-role{color:var(--mute);font-size:12.5px;margin:0 0 8px;font-weight:600}
+  .pf-bio{font-size:12.5px;color:#374151;line-height:1.5;margin:0 0 11px}
+  .pf-links{display:flex;gap:10px;flex-wrap:wrap}
+  .pf-link{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:#fff;background:#0a66c2;padding:7px 13px;border-radius:8px;text-decoration:none}
+  .pf-link:hover{filter:brightness(.92)}
+  .pf-link.yt{background:#FF0000}
+  .pf-link.gh{background:#1f2328}
+  .pf-link svg{width:16px;height:16px;fill:#fff}
+  @media (max-width:620px){.profile{flex-direction:column;text-align:center}.pf-bio{text-align:left}}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><span class="g">G</span><span class="o">o</span><span class="g2">o</span><span class="g">g</span><span class="l">l</span><span class="o">e</span> AI Pro - Unified Usage Dashboard</h1>
+    <p class="sub">Your $20 plan on one page. Only the <b style="color:#22B8CF">API</b> row is <b>live</b> (Google exposes no quota API for the rest). The <b style="color:#f0a832">manual</b> rows are snapshots you type from Google's own screens, saved on this device. Antigravity <i>can</i> be made live via a companion reader - see note under the table.</p>
+    <div class="toolbar">
+      <button class="primary" onclick="openAll()">↗ Open all dashboards</button>
+      <button onclick="resetVals()">↺ Reset numbers</button>
+    </div>
+  </header>
+
+  <h2 class="sec">Metered services - track your usage</h2>
+  <div class="table">
+    <div class="colhead"><div>Service &amp; Tool</div><div>Quota &amp; Limit Status</div><div>Plan Benefits</div><div>Usage Metrics</div><div>Actions &amp; Settings</div></div>
+    <div id="rows"></div>
+  </div>
+  <div class="disclaimer" role="note">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#f0a832" stroke-width="2"/><path d="M12 11v5" stroke="#f0a832" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1.2" fill="#f0a832"/></svg>
+    <div class="dtext"><b>Antigravity live read - disclaimer.</b> This page is sandboxed - it can't read <code>%APPDATA%\Antigravity</code> or any local file on its own, on this machine or any other. Nothing is read on the fly. A live gauge needs a companion reader (e.g. a scheduled PowerShell) that reads Antigravity's local state and writes <code>antigravity-usage.js</code> beside this file; the page then loads that via a <code>&lt;script&gt;</code> tag offline - no server, no browser file access. Where the reader hasn't run, this row stays manual like the others.</div>
+  </div>
+
+  <h2 class="sec">Non-metered Services included in your plan</h2>
+  <div class="perkboard" id="perkboard"></div>
+
+  <footer>
+    <div class="chip warn">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l9 16H3z" stroke="#f0a832" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4M12 17v.5" stroke="#f0a832" stroke-width="2" stroke-linecap="round"/></svg>
+      Gemini &amp; Antigravity roll up to one <b>global weekly cap</b>; 5h refresh only tops up the sprint limit.
+    </div>
+    <a class="chip" href="https://one.google.com/" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#4285F4" stroke-width="2"/><text x="12" y="16" font-size="11" text-anchor="middle" fill="#4285F4" font-weight="700">1</text></svg>
+      Everything bills under one line at <b>one.google.com</b> - shareable with 5 family members
+    </a>
+  </footer>
+  <p class="foot-note">Numbers are entered by you (Google exposes no quota API); the API row checks live. Figures reflect the AI Pro tier - edit the <code>ROWS</code> / <code>PERKS</code> arrays to retune. URLs current Jul 2026.</p>
+
+  <section class="profile" id="profile"></section>
+</div>
+
+<script>
+const ICON={
+  gemini:`<svg viewBox="0 0 24 24"><path d="M12 2c.5 5 4.5 8.5 9.5 10-5 1.5-9 5-9.5 10-.5-5-4.5-8.5-9.5-10 5-1.5 9-5 9.5-10z" fill="#4285F4"/></svg>`,
+  term:`<svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="4.5" width="19" height="15" rx="2" stroke="#34A853" stroke-width="2"/><path d="M6 9l3 2.5L6 14M11 15h6" stroke="#34A853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  flow:`<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="#FBBC04" stroke-width="2"/><path d="M10 9l5 3-5 3z" fill="#FBBC04"/></svg>`,
+  book:`<svg viewBox="0 0 24 24" fill="none"><path d="M4 5a2 2 0 012-2h12v18H6a2 2 0 01-2-2z" stroke="#EA4335" stroke-width="2" stroke-linejoin="round"/><path d="M8 8h6M8 12h6" stroke="#EA4335" stroke-width="2" stroke-linecap="round"/></svg>`,
+  cloud:`<svg viewBox="0 0 24 24" fill="none"><path d="M7 18a4 4 0 010-8 5 5 0 019.6-1.3A3.5 3.5 0 0117 18z" stroke="#22B8CF" stroke-width="2" stroke-linejoin="round"/></svg>`,
+};
+
+const ROWS=[
+  { id:"gemini", accent:"#4285F4", icon:ICON.gemini, name:"Gemini App / Live", note:"compute quota",
+    gaugeLabel:"Compute used · rolling 5h", used:68, max:100, unit:"% used", isPct:true,
+    benefits:["Gemini 3.1 Pro + Deep Think reasoning","1M-token context window","Deep Search in AI Mode","4× free usage · 5h refresh → weekly cap"],
+    metricHint:"Read % from Settings → Usage limits",
+    actions:[["View usage details","https://gemini.google.com/",0],["Learn Limits","https://support.google.com/gemini/answer/16275805",1]] },
+
+  { id:"antigravity", accent:"#34A853", icon:ICON.term, name:"Antigravity", note:"Gemini CLI retired Jun'26",
+    gaugeLabel:"Agent requests · daily pool", used:420, max:1500, unit:"req today", isPct:false,
+    benefits:["~1,500 agent model requests / day","Gemini 3 Pro + Claude / GPT-OSS models","Unlimited tab completions","Agent Manager &amp; browser integration"],
+    metricHint:"Read from app → Settings → Models (live-ready - see note)",
+    actions:[["Antigravity plans","https://antigravity.google/docs/plans",0],["Open Antigravity","https://antigravity.google/",1]] },
+
+  { id:"flow", accent:"#FBBC04", icon:ICON.flow, name:"Flow AI (Veo)", note:"AI Pro tier",
+    gaugeLabel:"Creative credits remaining", used:1000, max:1000, unit:"credits", isPct:false, invert:true,
+    benefits:["1,000 Flow credits / month","Veo 3.1 - Fast 20 cr · Quality 100 cr","Flow Music + Gemini Omni conversational edit","Buy AI credits for overage ($25 / 2,500)"],
+    metricHint:"Read from Flow → profile → credits",
+    actions:[["Open Flow dashboard","https://labs.google/fx/tools/flow",0],["Credits activity","https://one.google.com/ai/activity?utm_source=flow&utm_medium=web&utm_campaign=flow_ai_credits_page&dm=1&g1_landing_page=0",1]] },
+
+  { id:"notebooklm", accent:"#EA4335", icon:ICON.book, name:"NotebookLM", note:"per-notebook cap",
+    gaugeLabel:"Sources in notebook", used:0, max:300, unit:"sources", isPct:false,
+    benefits:["Up to 300 sources per notebook","5× Audio Overviews","Expanded notebooks","Deep source analysis"],
+    metricHint:"Count sources in the open notebook",
+    actions:[["Open NotebookLM","https://notebooklm.google.com/",0],["Learn limits","https://support.google.com/notebooklm",1]] },
+
+  { id:"api", accent:"#22B8CF", icon:ICON.cloud, name:"Cloud Gemini API", note:"pay-as-you-go · NOT in plan", live:true,
+    gaugeLabel:"Free-tier Flash reference", used:0, max:1500, unit:"RPD",
+    benefits:["Pay-per-token · separate billing","Free tier: Flash ~1,500 RPD","Per-project quota · resets midnight PT","$10/mo Cloud credits via Dev Program"],
+    metricHint:"Live check confirms key + model access",
+    actions:[["Go to AI Studio","https://aistudio.google.com/",0],["API usage &amp; billing","https://aistudio.google.com/billing",1]] },
+];
+
+const PERKS=[
+  { group:"Search & Agents", color:"#4285F4", items:[
+    {n:"Deep Search",d:"Gemini 3 Pro in Search - multi-step agentic reports, not just links.",url:"https://google.com"},
+    {n:"Daily Brief",d:"Morning agent synthesizing Gmail + Calendar + Gemini.",tag:["us","US only"]},
+  ]},
+  { group:"Workspace", color:"#34A853", items:[
+    {n:"AI Inbox in Gmail",d:"Manages to-dos, drafts replies, summarizes your mailbox."},
+    {n:"Gemini in Docs / Sheets / Slides / Meet",d:"Inline writing, formula generation, meeting summaries.",url:"https://workspace.google.com"},
+    {n:"Google Pics",d:"Generative design in Slides/Drive - object segmentation, asset creation."},
+  ]},
+  { group:"Developer & Coding", color:"#5E5CE6", items:[
+    {n:"Jules",d:"Agentic SWE - autonomously fixes bugs, maps codebases, runs multi-step tasks.",tag:["dev","expanded pool"],url:"https://jules.google"},
+    {n:"Android Studio Agent",d:"Top-tier model limits for building, testing, debugging Android apps."},
+    {n:"$10/mo Google Cloud credits",d:"Auto-bundled to your account for AI Studio / sandbox APIs.",tag:["dev","perk"]},
+  ]},
+  { group:"Open & Cloud", color:"#22B8CF", items:[
+    {n:"Gemma 4 (open weights)",d:"Run 12B locally - voice, vision, agentic. Ollama / HF / Kaggle.",tag:["free","100% free"]},
+    {n:"Vertex AI / Cloud APIs",d:"Vision, Speech-to-Text, Translation. Free monthly tier, then PAYG.",tag:["payg","separate billing"],url:"https://console.cloud.google.com/vertex-ai"},
+  ]},
+  { group:"Media & Ecosystem", color:"#EA4335", items:[
+    {n:"YouTube Premium Lite",d:"Ad-free viewing, background play, offline - YouTube + Music."},
+    {n:"Google Home Premium Standard",d:"Replaces Nest Aware: 10 days 24/7 video, 30 days event history, smart alerts."},
+    {n:"Google Health Premium",d:"Gemini health / sleep / fitness coaching (needs Pixel Watch / Fitbit)."},
+  ]},
+  { group:"Storage", color:"#FBBC04", items:[
+    {n:"5 TB pooled storage",d:"Shared across Gmail, Drive, Photos."},
+    {n:"Family sharing ×5",d:"Split the 5 TB with 5 members. AI pools stay exclusive to you.",url:"https://one.google.com/"},
+  ]},
+];
+
+const KEY="gaiu_v2";
+let store=JSON.parse(localStorage.getItem(KEY)||"{}");
+const save=()=>localStorage.setItem(KEY,JSON.stringify(store));
+const val=(r,f)=>(store[r.id]&&store[r.id][f]!=null)?store[r.id][f]:r[f];
+
+function pt(cx,cy,rad,t){const a=(180-t)*Math.PI/180;return[cx+rad*Math.cos(a),cy-rad*Math.sin(a)];}
+function arc(cx,cy,rad,t0,t1){const[x1,y1]=pt(cx,cy,rad,t0),[x2,y2]=pt(cx,cy,rad,t1);const lg=(t1-t0)>180?1:0;return `M${x1.toFixed(1)} ${y1.toFixed(1)} A${rad} ${rad} 0 ${lg} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`;}
+function gaugeSVG(r){
+  const used=+val(r,'used'),max=+val(r,'max')||1; let frac=Math.max(0,Math.min(1,used/max)); if(r.invert)frac=1-frac;
+  const pctTxt=r.isPct?used+"%":Math.round(frac*100)+"%";
+  return `<svg class="gauge" viewBox="0 0 180 108" width="168" height="100" role="img" aria-label="${pctTxt}">
+    <path d="${arc(90,92,70,0,180)}" fill="none" stroke="#eef1f6" stroke-width="13" stroke-linecap="round"/>
+    <path d="${arc(90,92,70,0,Math.max(0.5,180*frac))}" fill="none" stroke="${r.accent}" stroke-width="13" stroke-linecap="round"/>
+    <text x="90" y="82" text-anchor="middle" font-family="var(--mono)" font-size="25" font-weight="700" fill="#1f2937">${pctTxt}</text>
+  </svg><div class="gauge-lbl">${r.gaugeLabel}</div>`;
+}
+function apiGauge(r){return `<svg class="gauge" viewBox="0 0 180 108" width="168" height="100">
+  <path d="${arc(90,92,70,0,180)}" fill="none" stroke="#eef1f6" stroke-width="13" stroke-linecap="round"/>
+  <text x="90" y="80" text-anchor="middle" font-family="var(--mono)" font-size="14" fill="#22B8CF">not metered</text>
+  <text x="90" y="98" text-anchor="middle" font-size="9" fill="#9aa4b2">verify key →</text>
+  </svg><div class="gauge-lbl">${r.gaugeLabel}</div>`;}
+
+function metricCell(r){
+  if(r.live) return `<div class="metric">
+    <span class="mtag live">live · auto</span>
+    <div class="api-in"><input id="key" type="password" placeholder="Gemini API key" autocomplete="off" spellcheck="false">
+      <button class="btn" style="background:var(--cyan);border-color:var(--cyan);color:#fff" onclick="verify()">Verify</button></div>
+    <label class="chk"><input type="checkbox" id="remember"> remember on device</label>
+    <div id="apiout" class="api-out"></div></div>`;
+  const used=val(r,'used'),max=val(r,'max'),frac=Math.max(0,Math.min(1,used/max));
+  return `<div class="metric">
+    <span class="mtag">manual · you enter</span>
+    <div class="edit">
+      <input type="number" value="${used}" min="0" oninput="setV('${r.id}','used',this.value)" aria-label="used">
+      <span class="slash">/</span>
+      <input type="number" value="${max}" min="1" style="width:62px;font-size:15px;color:var(--mute);text-align:left" oninput="setV('${r.id}','max',this.value)" aria-label="max">
+      <span class="unit">${r.unit}</span></div>
+    <div class="prog"><i id="p-${r.id}" style="width:${(frac*100).toFixed(0)}%"></i></div>
+    <div class="hint">${r.metricHint}</div></div>`;
+}
+function rowHTML(r){return `<div class="row" style="--ac:${r.accent}">
+  <div class="cell" data-h="Service"><div class="svc">${r.icon}</div><div class="svc-name">${r.name}</div><div class="svc-note">${r.note}</div></div>
+  <div class="cell" data-h="Status"><div id="g-${r.id}">${r.live?apiGauge(r):gaugeSVG(r)}</div></div>
+  <div class="cell" data-h="Benefits"><ul class="benefits">${r.benefits.map(b=>`<li>${b}</li>`).join('')}</ul></div>
+  <div class="cell" data-h="Metrics">${metricCell(r)}</div>
+  <div class="cell" data-h="Actions"><div class="actions">${r.actions.map(a=>`<a class="btn ${a[2]?'ghost':''}" href="${a[1]}" target="_blank" rel="noopener">${a[0]}</a>`).join('')}</div></div>
+</div>`;}
+
+document.getElementById('rows').innerHTML=ROWS.map(rowHTML).join('');
+document.getElementById('perkboard').innerHTML=PERKS.map((p,i)=>
+  `<div class="band" style="--bc:${p.color}">
+     <div class="band-h">
+       <span class="bnum">0${i+1}</span>
+       <span class="bt">${p.group}</span>
+       <span class="bc">${p.items.length} included</span>
+     </div>
+     <div class="band-items">${p.items.map(it=>
+       `<div class="pcell">
+          <div class="pc-main">
+            <div class="n">${it.n}${it.tag?`<span class="tag ${it.tag[0]}">${it.tag[1]}</span>`:''}</div>
+            <div class="d">${it.d}</div>
+          </div>
+          ${it.url?`<a href="${it.url}" target="_blank" rel="noopener">open ↗</a>`:''}
+        </div>`).join('')}</div>
+   </div>`).join('');
+
+// --- profile (edit these 4 lines) ---
+const PROFILE={
+  name:"Ameer Syed",
+  role:"Senior Software Developer · AI Generalist · Microsoft Ecosystem",
+  bio:"Senior software developer since 2007, specializing in the Microsoft ecosystem - legacy RAD (FoxPro, VBA, VB6) through modern .NET 8, .NET Core and Blazor. Deep SQL Server (JSON, SSIS), Excel dashboarding, MS Access and PostgreSQL. Full-stack across database architecture, API design, desktop tooling and multi-tenant SaaS, with cloud deployment on Azure and containerized workloads. AI Generalist - building AI-driven automation, agent workflows and content generation pipelines.",
+  linkedin:"https://www.linkedin.com/in/ameernsyed",
+  github:"https://github.com/Syed-Ameer",
+  website:"https://syed-ameer.github.io",
+  youtube:[
+    {label:"GhoomAI", url:"https://www.youtube.com/@GhoomAI"},
+    {label:"SpeakEasyWithPip", url:"https://www.youtube.com/@SpeakEasyWithPip"}
+  ],
+  photo:"https://syed-ameer.github.io/profile.png"       // live Pages URL - loads anywhere
+};
+const YT=`<svg viewBox="0 0 24 24"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 00-1.8-1.8C19.3 5 12 5 12 5s-7.3 0-8.8.5A2.5 2.5 0 001.4 7.3C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 001.8 1.8C4.7 19 12 19 12 19s7.3 0 8.8-.5a2.5 2.5 0 001.8-1.8C23 15.2 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z"/></svg>`;
+document.getElementById('profile').innerHTML=`
+  <div class="pf-ava">
+    <img id="pfimg" src="${PROFILE.photo}" alt="${PROFILE.name}"
+      onerror="this.style.display='none';document.getElementById('pfmono').style.display='flex'">
+    <div id="pfmono" class="mono" style="display:none">${PROFILE.name.charAt(0)}</div>
+  </div>
+  <div class="pf-body">
+    <h3>${PROFILE.name}</h3>
+    <p class="pf-role">${PROFILE.role}</p>
+    <p class="pf-bio">${PROFILE.bio}</p>
+    <div class="pf-links">
+      <a class="pf-link" href="${PROFILE.linkedin}" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M4.98 3.5a2.5 2.5 0 11-.02 5 2.5 2.5 0 01.02-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05C20.4 8.65 22 10.9 22 15v6h-4v-5.3c0-1.27-.02-2.9-1.77-2.9-1.77 0-2.04 1.38-2.04 2.8V21H9z"/></svg>
+        LinkedIn
+      </a>
+      <a class="pf-link gh" href="${PROFILE.github}" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 00-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.36 1.09 2.94.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 015 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0012 2z"/></svg>
+        GitHub
+      </a>
+      ${PROFILE.youtube.map(c=>`<a class="pf-link yt" href="${c.url}" target="_blank" rel="noopener">${YT}${c.label}</a>`).join('')}
+    </div>
+  </div>`;
+
+function setV(id,f,v){store[id]=store[id]||{};store[id][f]=+v||0;save();
+  const r=ROWS.find(x=>x.id===id);document.getElementById('g-'+id).innerHTML=gaugeSVG(r);
+  const used=val(r,'used'),max=val(r,'max')||1;document.getElementById('p-'+id).style.width=Math.max(0,Math.min(100,used/max*100)).toFixed(0)+'%';}
+function resetVals(){if(confirm('Clear saved numbers?')){store={};save();location.reload();}}
+function openAll(){[...new Set([...ROWS.flatMap(r=>r.actions.map(a=>a[1])),...PERKS.flatMap(p=>p.items.filter(i=>i.url).map(i=>i.url))])]
+  .forEach((u,i)=>setTimeout(()=>window.open(u,'_blank','noopener'),i*180));}
+
+const sk=localStorage.getItem('gemini_key');
+if(sk){const k=document.getElementById('key');if(k){k.value=sk;document.getElementById('remember').checked=true;}}
+async function verify(){
+  const key=document.getElementById('key').value.trim(),out=document.getElementById('apiout');
+  if(!key){out.innerHTML='<span class="bad">No key.</span>';return;}
+  localStorage[document.getElementById('remember').checked?'setItem':'removeItem']('gemini_key',key);
+  out.textContent='checking…';
+  try{
+    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models',{headers:{'x-goog-api-key':key}});
+    if(!res.ok){const t=await res.text();out.innerHTML=`<span class="bad">✗ ${res.status}</span> ${t.slice(0,110)}`;return;}
+    const d=await res.json(),m=(d.models||[]).map(x=>x.name.replace('models/',''));
+    const pro=m.filter(x=>x.includes('gemini')&&x.includes('pro'));
+    out.innerHTML=`<span class="ok">✓ valid</span> · <span class="hl">${m.length}</span> models\nPro: ${pro.length?'<span class="ok">yes</span>':'<span class="bad">flash-only</span>'}`;
+  }catch(e){out.innerHTML=`<span class="bad">✗ blocked</span> (CORS on file://). Use PowerShell:\nInvoke-RestMethod .../v1beta/models -Headers @{"x-goog-api-key"=$k}`;}
+}
+</script>
